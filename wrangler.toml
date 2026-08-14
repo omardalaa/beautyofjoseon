@@ -1,0 +1,19 @@
+name = "beautyofjoseon"
+type = "javascript"
+
+main = "server/index.ts"
+
+[env.production]
+routes = [
+  { pattern = "beautyofjoseon.me", zone_name = "beautyofjoseon.me" }
+]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "beautyofjoseon"
+database_id = "YOUR_DATABASE_ID"
+
+[env.production.d1_databases]
+binding = "DB"
+database_name = "beautyofjoseon"
+database_id = "YOUR_DATABASE_ID"

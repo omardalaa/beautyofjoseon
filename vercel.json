@@ -1,0 +1,18 @@
+{
+  "builds": [
+    {
+      "src": "app",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "app"
+    }
+  ],
+  "env": {
+    "STRIPE_SECRET_KEY": "@stripe-secret-key",
+    "STRIPE_PUBLIC_KEY": "@stripe-public-key"
+  }
+}
