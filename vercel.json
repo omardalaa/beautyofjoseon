@@ -10,9 +10,5 @@
       "src": "/(.*)",
       "dest": "app"
     }
-  ],
-  "env": {
-    "STRIPE_SECRET_KEY": "@stripe-secret-key",
-    "STRIPE_PUBLIC_KEY": "@stripe-public-key"
-  }
+  ]
 }
