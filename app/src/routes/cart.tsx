@@ -1,8 +1,39 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { useState } from 'react'
 import { useCart } from '~/lib/CartContext'
 
 function Cart() {
   const { items, removeItem, updateQuantity, total } = useCart()
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleCheckout = async () => {
+    setIsLoading(true)
+    setError(null)
+    
+    try {
+      const checkoutItems = items.map(item => ({
+        sku: item.sku,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+      }))
+
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: checkoutItems }),
+      })
+
+      if (!response.ok) throw new Error('Checkout failed')
+      
+      const { url } = await response.json()
+      if (url) window.location.href = url
+    } catch (err) {
+      setError('Failed to initiate checkout. Please try again.')
+      setIsLoading(false)
+    }
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -28,20 +59,20 @@ function Cart() {
                     <div className="flex items-center gap-2 mt-2">
                       <button
                         onClick={() => updateQuantity(item.sku, item.quantity - 1)}
-                        className="px-2 py-1 bg-gray-200 rounded"
+                        className="px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded transition"
                       >
                         -
                       </button>
                       <span className="w-8 text-center">{item.quantity}</span>
                       <button
                         onClick={() => updateQuantity(item.sku, item.quantity + 1)}
-                        className="px-2 py-1 bg-gray-200 rounded"
+                        className="px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded transition"
                       >
                         +
                       </button>
                       <button
                         onClick={() => removeItem(item.sku)}
-                        className="ml-auto text-red-600 hover:text-red-800"
+                        className="ml-auto text-red-600 hover:text-red-800 text-sm"
                       >
                         Remove
                       </button>
@@ -73,11 +104,19 @@ function Cart() {
                 <span>{total.toFixed(2)} AED</span>
               </div>
             </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded mb-4 text-sm">
+                {error}
+              </div>
+            )}
+
             <button
-              disabled={items.length === 0}
+              onClick={handleCheckout}
+              disabled={items.length === 0 || isLoading}
               className="w-full bg-joseon-700 hover:bg-joseon-800 disabled:bg-gray-400 text-white py-3 rounded-lg font-semibold transition"
             >
-              Checkout with Stripe
+              {isLoading ? 'Processing...' : 'Checkout with Stripe'}
             </button>
           </div>
         </div>
