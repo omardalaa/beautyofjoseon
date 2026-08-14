@@ -28,3 +28,5 @@ build/
 # Build outputs
 .vercel
 .turbo
+
+.vercel
