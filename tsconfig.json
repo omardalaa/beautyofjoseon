@@ -11,9 +11,9 @@
     "resolveJsonModule": true,
     "moduleResolution": "bundler",
     "paths": {
-      "~/*": ["./src/*"]
+      "~/*": ["./app/src/*"]
     }
   },
-  "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["app/src"],
+  "exclude": ["node_modules", "dist"]
 }

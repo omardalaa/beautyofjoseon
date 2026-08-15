@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tanstack-start dev || echo 'TanStack Start not available; use tsc to compile'",
-    "build": "tsc --outDir dist --declaration",
+    "build": "tsc -p tsconfig.server.json",
     "start": "node dist/app/src/server/index.js",
     "preview": "node dist/app/src/server/index.js",
     "type-check": "tsc --noEmit"
