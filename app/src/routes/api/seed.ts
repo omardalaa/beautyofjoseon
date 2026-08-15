@@ -1,4 +1,4 @@
-import { json } from '@tanstack/start'
+import { createServerFn } from '@tanstack/start'
 import { getDB } from '~/server/db'
 
 const PRODUCTS = [
@@ -39,14 +39,11 @@ const PRODUCTS = [
   { sku: 'N70103266V', title: 'Red Bean Water Gel 100ml', description: 'Lightweight hydrating and soothing face gel. Calms irritation, balances oil, provides deep moisture. 3.38 fl.oz.', original_price: 75, brand: 'Beauty of Joseon', image_url: 'https://f.nooncdn.com/p/pzsku/Z7815731E0E8B7749F2BBZ/45/_/1778231409/4ad1b026-f93d-476a-8b11-8cbb52a5455e.jpg', rating: 3.8, rating_count: 31, in_stock: 1 }
 ]
 
-export async function POST() {
+export const seedAction = createServerFn('POST /api/seed', async () => {
   try {
     const supabase = await getDB()
     if (!supabase) {
-      return json(
-        { error: 'Database not available' },
-        { status: 500 }
-      )
+      return { error: 'Database not available' }
     }
 
     let inserted = 0
@@ -84,18 +81,15 @@ export async function POST() {
       }
     }
 
-    return json({
+    return {
       success: true,
       message: `Seeded ${inserted}/${PRODUCTS.length} products`,
       inserted,
       total: PRODUCTS.length,
       errors: errors.length > 0 ? errors : undefined
-    })
+    }
   } catch (error) {
     console.error('Seed error:', error)
-    return json(
-      { error: String(error) },
-      { status: 500 }
-    )
+    return { error: String(error) }
   }
-}
+})
