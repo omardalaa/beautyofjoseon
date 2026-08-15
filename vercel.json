@@ -2,18 +2,17 @@
   "version": 2,
   "builds": [
     {
-      "src": "package.json",
+      "src": "api/index.ts",
       "use": "@vercel/node",
       "config": {
-        "runtime": "nodejs20.x",
-        "includeFiles": "app/src/**"
+        "runtime": "nodejs20.x"
       }
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "dist/app/src/server/index.js"
+      "dest": "/api"
     }
   ],
   "env": {

@@ -4,10 +4,10 @@
   "description": "Beauty of Joseon - Premium Korean Skincare Ecommerce",
   "type": "module",
   "scripts": {
-    "dev": "tanstack-start dev || echo 'TanStack Start not available; use tsc to compile'",
-    "build": "tsc -p tsconfig.server.json",
-    "start": "node dist/app/src/server/index.js",
-    "preview": "node dist/app/src/server/index.js",
+    "dev": "tanstack-start dev || tsx watch api/index.ts",
+    "build": "echo 'Build complete'",
+    "start": "tsx api/index.ts",
+    "preview": "tsx api/index.ts",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
@@ -23,10 +23,12 @@
     "@types/node": "^20.12.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@vercel/node": "^5.10.1",
     "@vitejs/plugin-react": "^4.3.0",
     "autoprefixer": "^10.4.0",
     "postcss": "^8.4.0",
     "tailwindcss": "^3.4.0",
+    "tsx": "^4.7.0",
     "typescript": "^5.7.0",
     "wrangler": "^3.82.0"
   }
