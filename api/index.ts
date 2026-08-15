@@ -1,4 +1,67 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
+import { createClient } from '@supabase/supabase-js'
+
+// Initialize Supabase client
+const supabaseUrl = process.env.SUPABASE_URL
+const supabaseKey = process.env.SUPABASE_ANON_KEY
+
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null
+
+// Sample products to seed (if database is empty)
+const sampleProducts = [
+  {
+    name: 'Essential Essence Toner',
+    description: 'Hydrating essence toner with traditional Joseon ingredients',
+    price_aed: 89.99,
+    original_noon_price: 66.66,
+    image_url: 'https://via.placeholder.com/300x300?text=Essence+Toner',
+    rating: 4.8,
+    rating_count: 245,
+    in_stock: true,
+    stock_count: 50,
+    brand: 'Beauty of Joseon',
+    category: 'Toners'
+  },
+  {
+    name: 'Snow Brightening Cream',
+    description: 'Whitening cream for radiant, glowing skin',
+    price_aed: 129.99,
+    original_noon_price: 96.29,
+    image_url: 'https://via.placeholder.com/300x300?text=Snow+Cream',
+    rating: 4.7,
+    rating_count: 189,
+    in_stock: true,
+    stock_count: 40,
+    brand: 'Beauty of Joseon',
+    category: 'Moisturizers'
+  },
+  {
+    name: 'Ginseng Deep Serum',
+    description: 'Anti-aging serum with ginseng extract',
+    price_aed: 149.99,
+    original_noon_price: 111.11,
+    image_url: 'https://via.placeholder.com/300x300?text=Ginseng+Serum',
+    rating: 4.9,
+    rating_count: 312,
+    in_stock: true,
+    stock_count: 35,
+    brand: 'Beauty of Joseon',
+    category: 'Serums'
+  },
+  {
+    name: 'Pearl Radiance Mask',
+    description: 'Brightening sheet mask with pearl powder',
+    price_aed: 59.99,
+    original_noon_price: 44.44,
+    image_url: 'https://via.placeholder.com/300x300?text=Pearl+Mask',
+    rating: 4.6,
+    rating_count: 156,
+    in_stock: true,
+    stock_count: 60,
+    brand: 'Beauty of Joseon',
+    category: 'Masks'
+  }
+]
 
 // Vercel serverless function handler
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -18,12 +81,58 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Handle API routes
   if (pathname.startsWith('/api/')) {
-    // API seed endpoint - return JSON
+    // API seed endpoint - seed products to database
     if (pathname === '/api/seed') {
-      return res.status(200).json({
-        message: 'Seed endpoint - ready to seed products',
-        method: req.method,
-      })
+      if (!supabase) {
+        return res.status(500).json({
+          error: 'Supabase not configured',
+          message: 'SUPABASE_URL and SUPABASE_ANON_KEY environment variables are required'
+        })
+      }
+
+      try {
+        // Check if products table exists and has data
+        const { data: existingProducts, error: fetchError } = await supabase
+          .from('products')
+          .select('id')
+          .limit(1)
+
+        if (fetchError && fetchError.code !== 'PGRST116') {
+          // Table doesn't exist or other error - try to insert anyway
+          console.log('Fetching products error:', fetchError)
+        }
+
+        if (existingProducts && existingProducts.length > 0) {
+          return res.status(200).json({
+            message: 'Products already seeded',
+            count: existingProducts.length
+          })
+        }
+
+        // Seed the products
+        const { data, error } = await supabase
+          .from('products')
+          .insert(sampleProducts)
+          .select()
+
+        if (error) {
+          return res.status(500).json({
+            error: 'Failed to seed products',
+            details: error.message
+          })
+        }
+
+        return res.status(200).json({
+          message: 'Products seeded successfully',
+          count: data?.length || 0,
+          products: data
+        })
+      } catch (error: any) {
+        return res.status(500).json({
+          error: 'Error seeding products',
+          message: error.message
+        })
+      }
     }
 
     // Generic API response
@@ -84,18 +193,83 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       )
 
     case '/shop':
-      return res.status(200).setHeader('Content-Type', 'text/html').send(
-        renderPage('Shop', `
-          <h2>Our Products</h2>
-          <p>Handcrafted Korean skincare products using traditional Joseon recipes.</p>
-          <ul style="margin-top: 20px;">
-            <li>Essential Essence Toner</li>
-            <li>Snow Brightening Cream</li>
-            <li>Ginseng Deep Serum</li>
-            <li>Pearl Radiance Mask</li>
-          </ul>
-        `)
-      )
+      try {
+        if (!supabase) {
+          // Fallback to sample products if Supabase not configured
+          const productsList = sampleProducts
+            .map(p => `
+              <div style="border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 4px;">
+                <h4>${p.name}</h4>
+                <p>${p.description}</p>
+                <p><strong>Price:</strong> ${p.price_aed} AED</p>
+                <p><strong>Rating:</strong> ${p.rating} ⭐ (${p.rating_count} reviews)</p>
+                <button style="padding: 8px 16px; background: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer;">Add to Cart</button>
+              </div>
+            `)
+            .join('')
+
+          return res.status(200).setHeader('Content-Type', 'text/html').send(
+            renderPage('Shop', `
+              <h2>Our Products</h2>
+              <p>Handcrafted Korean skincare products using traditional Joseon recipes.</p>
+              <div style="margin-top: 20px;">${productsList}</div>
+            `)
+          )
+        }
+
+        // Fetch products from Supabase
+        const { data: products, error } = await supabase
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false })
+
+        if (error) {
+          console.error('Error fetching products:', error)
+          // Fallback to sample products on error
+          const fallbackList = sampleProducts
+            .map(p => `<li>${p.name} - ${p.price_aed} AED</li>`)
+            .join('')
+
+          return res.status(200).setHeader('Content-Type', 'text/html').send(
+            renderPage('Shop', `
+              <h2>Our Products</h2>
+              <p>Handcrafted Korean skincare products using traditional Joseon recipes.</p>
+              <ul style="margin-top: 20px;">${fallbackList}</ul>
+            `)
+          )
+        }
+
+        // Build product HTML from database
+        const productsList = (products && products.length > 0 ? products : sampleProducts)
+          .map((p: any) => `
+            <div style="border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 4px;">
+              <h4>${p.name}</h4>
+              <p>${p.description}</p>
+              <p><strong>Price:</strong> ${p.price_aed} AED</p>
+              <p><strong>Rating:</strong> ${p.rating} ⭐ (${p.rating_count} reviews)</p>
+              <p><strong>Stock:</strong> ${p.in_stock ? 'In Stock' : 'Out of Stock'}</p>
+              <button style="padding: 8px 16px; background: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer;">Add to Cart</button>
+            </div>
+          `)
+          .join('')
+
+        return res.status(200).setHeader('Content-Type', 'text/html').send(
+          renderPage('Shop', `
+            <h2>Our Products</h2>
+            <p>Handcrafted Korean skincare products using traditional Joseon recipes.</p>
+            <div style="margin-top: 20px;">${productsList}</div>
+            <p style="margin-top: 20px; font-size: 12px; color: #666;">Total products: ${products?.length || sampleProducts.length}</p>
+          `)
+        )
+      } catch (error: any) {
+        console.error('Error rendering shop:', error)
+        return res.status(500).setHeader('Content-Type', 'text/html').send(
+          renderPage('Shop', `
+            <h2>Error</h2>
+            <p>Failed to load products: ${error.message}</p>
+          `)
+        )
+      }
 
     case '/cart':
       return res.status(200).setHeader('Content-Type', 'text/html').send(
